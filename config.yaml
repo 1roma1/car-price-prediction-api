@@ -1,0 +1,12 @@
+host: 127.0.0.1
+port: 8080
+
+model_name: linreg
+log_transform: true
+
+experiment_id: 954960165727435693
+estimator_id: m-d7e73d02055a44aab25500c73cf1d071
+transformer_id: m-78edd064662b427e8f87b9e0d56df743
+
+estimator_model: model.onnx
+transformer_model: model.onnx
