@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from dotenv import load_dotenv
+
 from schema import DataSchema
 from utils import load_configuration
 from model import Model
