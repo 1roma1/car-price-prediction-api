@@ -1,3 +1,5 @@
+import os
+import base64
 import tempfile
 import requests
 import onnxruntime
@@ -8,8 +10,6 @@ from schema import DataSchema
 
 
 class Model:
-    URL_TEMPLATE = "http://{host}:{port}/api/2.0/mlflow-artifacts/artifacts/{experiment_id}/models/{model_id}/artifacts/{model}"
-
     def __init__(self, model_name, log_transform=False):
         self.model_name = model_name
         self.log_transform = log_transform
@@ -23,6 +23,7 @@ class Model:
                 input_dict[key] = np.array(input_dict[key], dtype=np.float32).reshape(1, -1)
             else:
                 input_dict[key] = np.array(input_dict[key]).reshape(1, -1)
+        return input_dict
 
     def predict(self, input: DataSchema):
         input = self._process(input)
@@ -37,44 +38,33 @@ class Model:
         )[0][0][0]
         return np.expm1(prediction) if self.log_transform else prediction
 
-    def _download_model(self, url, path):
-        resp = requests.get(url)
+    def _download_model(self, url, path, params):
+        basic_auth_str = f"{os.getenv('MLFLOW_TRACKING_USERNAME')}:{os.getenv('MLFLOW_TRACKING_PASSWORD')}".encode()
+        auth_str = "Basic " + base64.standard_b64encode(basic_auth_str).decode("utf-8")
+        headers = {"Authorization": auth_str, "User-Agent": "mlflow-python-client/2.22.2"}
+        resp = requests.get(url, headers=headers, params=params)
         if resp.ok:
             with open(path, "wb") as f:
                 f.write(resp.content)
 
-    def load(
-        self,
-        host,
-        port,
-        experiment_id,
-        estimator_id,
-        estimator_name,
-        transformer_id=None,
-        transformer_name=None,
-    ):
+    def load(self, run_id, estimator_name, transformer_name=None):
+        url = os.getenv("MLFLOW_URL")
         with tempfile.TemporaryDirectory() as tmp_dir:
-            if transformer_id:
-                transformer_url = Model.URL_TEMPLATE.format(
-                    host=host,
-                    port=port,
-                    experiment_id=experiment_id,
-                    model_id=transformer_id,
-                    model=transformer_name,
-                )
-                self._download_model(transformer_url, Path(tmp_dir, "transformer.onnx"))
+            if transformer_name:
+                params = {
+                    "path": f"{transformer_name}/model.onnx",
+                    "run_uuid": f"{run_id}",
+                }
+                self._download_model(url, Path(tmp_dir, "transformer.onnx"), params)
                 self.transformer = onnxruntime.InferenceSession(
                     Path(tmp_dir, "transformer.onnx"), providers=["CPUExecutionProvider"]
                 )
 
-            estimator_url = Model.URL_TEMPLATE.format(
-                host=host,
-                port=port,
-                experiment_id=experiment_id,
-                model_id=estimator_id,
-                model=estimator_name,
-            )
-            self._download_model(estimator_url, Path(tmp_dir, "estimator.onnx"))
+            params = {
+                "path": f"{estimator_name}/model.onnx",
+                "run_uuid": f"{run_id}",
+            }
+            self._download_model(url, Path(tmp_dir, "estimator.onnx"), params)
 
             self.estimator = onnxruntime.InferenceSession(
                 Path(tmp_dir, "estimator.onnx"), providers=["CPUExecutionProvider"]

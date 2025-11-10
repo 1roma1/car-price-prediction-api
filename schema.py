@@ -9,14 +9,13 @@ class DataSchema(BaseModel):
     engine_power: float
     mixed_drive_fuel_consumption: float
     options: float
+    price_usd_bin: float
 
-    brand: str
+    brand: Literal["Audi", "Mazda"]
     engine_type: Literal["бензин", "дизель", "электро", "другой"]
-    transmission_type: str
-    interior_material: str
+    transmission_type: Literal["механика", "автомат"]
+    interior_material: Literal["ткань", "кожа"]
     body_type: Literal[
         "внедорожник", "седан", "универсал", "хэтчбек", "минивэн", "лифтбек", "купе", "другой"
     ]
-    drive_type: str
-
-    # price_usd_bin: int
+    drive_type: Literal["передний привод", "задний привод"]
