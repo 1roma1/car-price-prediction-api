@@ -13,7 +13,9 @@ model = Model(config["model_name"], config["log_transform"])
 model.load(
     run_id=config["run_id"],
     estimator_name=config["estimator_name"],
+    estimator_model_name=config["estimator_model_name"],
     transformer_name=config["transformer_name"],
+    transformer_model_name=config["transformer_model_name"],
 )
 
 

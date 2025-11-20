@@ -1,10 +1,12 @@
 import os
 import base64
 import tempfile
+import pickle
 import requests
-import onnxruntime
 import numpy as np
+import pandas as pd
 
+from catboost import CatBoostRegressor
 from pathlib import Path
 from schema import DataSchema
 
@@ -15,27 +17,17 @@ class Model:
         self.log_transform = log_transform
 
     def _process(self, input: DataSchema) -> dict:
-        schema = input.model_json_schema()["properties"]
         input_dict = input.model_dump()
 
         for key in input_dict.keys():
-            if schema[key]["type"] == "number":
-                input_dict[key] = np.array(input_dict[key], dtype=np.float32).reshape(1, -1)
-            else:
-                input_dict[key] = np.array(input_dict[key]).reshape(1, -1)
-        return input_dict
+            input_dict[key] = [input_dict[key]]
+        return pd.DataFrame(input_dict)
 
     def predict(self, input: DataSchema):
         input = self._process(input)
         if self.transformer:
-            transformer_label_name = self.transformer.get_outputs()[0].name
-            transformer_output = self.transformer.run([transformer_label_name], input)[0]
-
-        estimator_input_name = self.estimator.get_inputs()[0].name
-        estimator_label_name = self.estimator.get_outputs()[0].name
-        prediction = self.estimator.run(
-            [estimator_label_name], {estimator_input_name: transformer_output.astype(np.float64)}
-        )[0][0][0]
+            input = self.transformer.transform(input)
+        prediction = self.estimator.predict(input)
         return np.expm1(prediction) if self.log_transform else prediction
 
     def _download_model(self, url, path, params):
@@ -47,25 +39,30 @@ class Model:
             with open(path, "wb") as f:
                 f.write(resp.content)
 
-    def load(self, run_id, estimator_name, transformer_name=None):
+    def load(
+        self,
+        run_id: str,
+        estimator_name: str,
+        estimator_model_name: str,
+        transformer_name: str = None,
+        transformer_model_name: str = None,
+    ):
         url = os.getenv("MLFLOW_URL")
         with tempfile.TemporaryDirectory() as tmp_dir:
             if transformer_name:
                 params = {
-                    "path": f"{transformer_name}/model.onnx",
+                    "path": f"{transformer_name}/{transformer_model_name}",
                     "run_uuid": f"{run_id}",
                 }
-                self._download_model(url, Path(tmp_dir, "transformer.onnx"), params)
-                self.transformer = onnxruntime.InferenceSession(
-                    Path(tmp_dir, "transformer.onnx"), providers=["CPUExecutionProvider"]
-                )
+                self._download_model(url, Path(tmp_dir, transformer_model_name), params)
+                with open(Path(tmp_dir) / transformer_model_name, "rb") as f:
+                    self.transformer = pickle.load(f)
 
             params = {
-                "path": f"{estimator_name}/model.onnx",
+                "path": f"{estimator_name}/{estimator_model_name}",
                 "run_uuid": f"{run_id}",
             }
-            self._download_model(url, Path(tmp_dir, "estimator.onnx"), params)
+            self._download_model(url, Path(tmp_dir, estimator_model_name), params)
 
-            self.estimator = onnxruntime.InferenceSession(
-                Path(tmp_dir, "estimator.onnx"), providers=["CPUExecutionProvider"]
-            )
+            if self.model_name == "cb":
+                self.estimator = CatBoostRegressor().load_model(Path(tmp_dir, estimator_model_name))

@@ -1,6 +1,9 @@
-model_name: linreg
-log_transform: true
+model_name: cb
+log_transform: false
 
-run_id: c7f322e156444fa6bdb12ab4960aedc4
-estimator_name: estimator_nervous-ram-916
-transformer_name: transformer_nervous-ram-916
+run_id: 77a8a869ba844245ba5e43fba81fd32b
+estimator_name: cb
+transformer_name: ct
+
+estimator_model_name: model.cb
+transformer_model_name: model.pkl
