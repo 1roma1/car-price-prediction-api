@@ -20,7 +20,10 @@ class CountTransformer(BaseEstimator, TransformerMixin):
         X = X.tolist()
 
         if isinstance(X[0], list):
-            X = [[len(str(item).split(self.delimiter)) for item in row] for row in X]
+            X = [
+                [len(str(item).split(self.delimiter)) for item in row]
+                for row in X
+            ]
         else:
             X = [len(str(item).split(self.delimiter)) for item in X]
 

@@ -8,7 +8,7 @@ import pandas as pd
 
 from catboost import CatBoostRegressor
 from pathlib import Path
-from schema import DataSchema
+from src.schema import DataSchema
 
 
 class Model:
@@ -31,9 +31,16 @@ class Model:
         return np.expm1(prediction) if self.log_transform else prediction
 
     def _download_model(self, url, path, params):
-        basic_auth_str = f"{os.getenv('MLFLOW_TRACKING_USERNAME')}:{os.getenv('MLFLOW_TRACKING_PASSWORD')}".encode()
-        auth_str = "Basic " + base64.standard_b64encode(basic_auth_str).decode("utf-8")
-        headers = {"Authorization": auth_str, "User-Agent": "mlflow-python-client/2.22.2"}
+        username = os.getenv("MLFLOW_TRACKING_USERNAME")
+        password = os.getenv("MLFLOW_TRACKING_PASSWORD")
+        basic_auth_str = f"{username}:{password}".encode()
+        auth_str = "Basic " + base64.standard_b64encode(basic_auth_str).decode(
+            "utf-8"
+        )
+        headers = {
+            "Authorization": auth_str,
+            "User-Agent": "mlflow-python-client/2.22.2",
+        }
         resp = requests.get(url, headers=headers, params=params)
         if resp.ok:
             with open(path, "wb") as f:
@@ -54,7 +61,9 @@ class Model:
                     "path": f"{transformer_name}/{transformer_model_name}",
                     "run_uuid": f"{run_id}",
                 }
-                self._download_model(url, Path(tmp_dir, transformer_model_name), params)
+                self._download_model(
+                    url, Path(tmp_dir, transformer_model_name), params
+                )
                 with open(Path(tmp_dir) / transformer_model_name, "rb") as f:
                     self.transformer = pickle.load(f)
 
@@ -62,7 +71,11 @@ class Model:
                 "path": f"{estimator_name}/{estimator_model_name}",
                 "run_uuid": f"{run_id}",
             }
-            self._download_model(url, Path(tmp_dir, estimator_model_name), params)
+            self._download_model(
+                url, Path(tmp_dir, estimator_model_name), params
+            )
 
             if self.model_name == "cb":
-                self.estimator = CatBoostRegressor().load_model(Path(tmp_dir, estimator_model_name))
+                self.estimator = CatBoostRegressor().load_model(
+                    Path(tmp_dir, estimator_model_name)
+                )

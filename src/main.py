@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from dotenv import load_dotenv
 
-from schema import DataSchema
-from utils import load_configuration
-from model import Model
+from src.schema import DataSchema
+from src.utils import load_configuration
+from src.model import Model
 
 load_dotenv()
 
