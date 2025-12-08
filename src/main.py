@@ -19,7 +19,12 @@ model.load(
 )
 
 
+@app.get("/health")
+def check_health():
+    return {"status": "ok"}
+
+
 @app.post("/predict")
 def predict(car_ad: DataSchema):
     price = model.predict(car_ad)
-    return {"predict": int(price)}
+    return {"predicted_price": int(price)}
