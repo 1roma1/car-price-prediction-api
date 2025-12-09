@@ -22,4 +22,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
 
-CMD ["uvicorn", "src.main:app", "--port", "8080", "--host", "0.0.0.0", "--root-path", "/car-price-api"]
+CMD ["uvicorn", "src.main:app", "--port", "8080", "--host", "0.0.0.0"]
