@@ -62,3 +62,27 @@ The API service will be accessible at `http://127.0.0.1:8000`
   "predicted_price": 6638
 }
 ```
+
+## Deploy
+1. Build Docker container
+```
+docker build -t romansaiko/car-price-prediction-api .
+```
+2. Push the container to DockerHub
+```
+docker push romansaiko/car-price-prediction-api
+```
+3. Connect to remote VPS server
+```
+ssh username@ipaddress
+```
+4. Stop running docker container and remove image
+```
+docker kill containerid
+docker rmi romansaiko/car-price-prediction-api
+```
+5. Pull new container and run it
+```
+docker pull romansaiko/car-price-prediction-api
+docker run -d -p 127.0.0.1:8080:8080 --env-file .env romansaiko/car-price-prediction-api
+```
