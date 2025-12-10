@@ -7,7 +7,7 @@ from src.model import Model
 
 load_dotenv()
 
-app = FastAPI()
+app = FastAPI(root_path="/car-price-api")
 config = load_configuration("config.yaml")
 model = Model(config["model_name"], config["log_transform"])
 model.load(
