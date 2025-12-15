@@ -36,7 +36,7 @@ jobs:
             docker image pull romansaiko/car-price-prediction-api:latest
             docker container stop car-price-prediction-api
             docker container rm car-price-prediction-api
-            docker container run -d --name car-price-prediction-api
-             -p 127.0.0.1:8080:8080 -e MLFLOW_TRACKING_USERNAME=${{ secrets.MLFLOW_TRACKING_USERNAME }}
-             -e MLFLOW_TRACKING_PASSWORD=${{ secrets.MLFLOW_TRACKING_PASSWORD }} 
+            docker container run -d --name car-price-prediction-api \
+             -p 127.0.0.1:8080:8080 -e MLFLOW_TRACKING_USERNAME=${{ secrets.MLFLOW_TRACKING_USERNAME }} \
+             -e MLFLOW_TRACKING_PASSWORD=${{ secrets.MLFLOW_TRACKING_PASSWORD }} \
              -e MLFLOW_URL=${{ secrets.MLFLOW_URL }} romansaiko/car-price-prediction-api
